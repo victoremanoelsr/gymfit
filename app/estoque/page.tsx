@@ -1,0 +1,7 @@
+import { Package } from 'lucide-react';
+import { ProtectedPage } from '@/components/ProtectedPage';
+import { PageHeader } from '@/components/PageHeader';
+import { CrudResource } from '@/components/CrudResource';
+import { requireSession } from '@/lib/auth';
+
+export default async function EstoquePage(){const {profile}=await requireSession();return <ProtectedPage><div className="page"><PageHeader title="PDV & Estoque" description="Produtos, custos, preços, validade, estoque mínimo e base para vendas integradas." actions={<span className="badge badge-yellow"><Package size={13}/> Controle de margem</span>}/><CrudResource table="products" organizationId={profile.organization_id} searchFields={['name','sku','category']} addLabel="Novo produto" emptyText="Nenhum produto cadastrado." columns={[{key:'name',label:'Produto'},{key:'sku',label:'SKU'},{key:'category',label:'Categoria'},{key:'sale_price',label:'Venda',format:'money'},{key:'cost_price',label:'Custo',format:'money'},{key:'stock_quantity',label:'Estoque'},{key:'min_stock',label:'Mínimo'}]} fields={[{name:'name',label:'Produto',required:true},{name:'sku',label:'SKU'},{name:'category',label:'Categoria'},{name:'sale_price',label:'Preço de venda',type:'number',step:'0.01',required:true},{name:'cost_price',label:'Preço de custo',type:'number',step:'0.01'},{name:'stock_quantity',label:'Estoque inicial',type:'number',step:'0.001'},{name:'min_stock',label:'Estoque mínimo',type:'number',step:'0.001'},{name:'expiry_date',label:'Validade',type:'date'}]}/></div></ProtectedPage>}

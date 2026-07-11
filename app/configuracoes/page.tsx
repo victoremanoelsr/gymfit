@@ -1,0 +1,21 @@
+import { Building2, CreditCard, Settings, ShieldCheck, Tags } from 'lucide-react';
+import { ProtectedPage } from '@/components/ProtectedPage';
+import { PageHeader } from '@/components/PageHeader';
+import { CrudResource } from '@/components/CrudResource';
+import { UserAccessManager } from '@/components/UserAccessManager';
+import { requireSession } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function ConfiguracoesPage(){
+  const {profile}=await requireSession(); const supabase=await createClient();
+  let mq=supabase.from('members').select('id,full_name,user_id').order('full_name').limit(500); if(profile.organization_id) mq=mq.eq('organization_id',profile.organization_id);
+  const [{data:members},{data:organizations}]=await Promise.all([mq, profile.role==='platform_admin'?supabase.from('organizations').select('id,name').order('name'):Promise.resolve({data:[] as any[]})]);
+  return <ProtectedPage><div className="page"><PageHeader title="Configurações" description="Acessos, unidades, planos e categorias que sustentam a operação da academia." actions={<span className="badge badge-blue"><Settings size={13}/> Administração</span>}/>
+    <section style={{marginBottom:28}}><div className="section-head"><h2><ShieldCheck size={17} style={{verticalAlign:'middle',marginRight:7}}/>Usuários e permissões</h2><span>Gerente · Treinador · Aluno</span></div><UserAccessManager actorRole={profile.role} organizationId={profile.organization_id} members={members||[]} organizations={organizations||[]}/></section>
+    {profile.organization_id && <>
+      <section style={{marginBottom:28}}><div className="section-head"><h2><Building2 size={17} style={{verticalAlign:'middle',marginRight:7}}/>Unidades</h2><span>Rede e filiais</span></div><CrudResource table="branches" organizationId={profile.organization_id} searchFields={['name','city','state','address']} addLabel="Nova unidade" emptyText="Nenhuma unidade cadastrada." columns={[{key:'name',label:'Unidade'},{key:'city',label:'Cidade'},{key:'state',label:'UF'},{key:'phone',label:'Telefone'},{key:'capacity',label:'Capacidade'},{key:'active',label:'Ativa',format:'boolean'}]} fields={[{name:'name',label:'Nome da unidade',required:true},{name:'city',label:'Cidade'},{name:'state',label:'UF'},{name:'address',label:'Endereço'},{name:'phone',label:'Telefone'},{name:'capacity',label:'Capacidade estimada',type:'number'}]}/></section>
+      <section style={{marginBottom:28}}><div className="section-head"><h2><CreditCard size={17} style={{verticalAlign:'middle',marginRight:7}}/>Planos comerciais</h2><span>Mensalidades e contratos</span></div><CrudResource table="plans" organizationId={profile.organization_id} searchFields={['name','description','billing_cycle']} addLabel="Novo plano" emptyText="Nenhum plano cadastrado." columns={[{key:'name',label:'Plano'},{key:'price',label:'Valor',format:'money'},{key:'billing_cycle',label:'Cobrança'},{key:'duration_months',label:'Duração (meses)'},{key:'active',label:'Ativo',format:'boolean'}]} fields={[{name:'name',label:'Nome do plano',required:true},{name:'description',label:'Descrição'},{name:'price',label:'Valor',type:'number',step:'0.01',required:true},{name:'billing_cycle',label:'Ciclo de cobrança',type:'select',defaultValue:'monthly',options:[{label:'Mensal',value:'monthly'},{label:'Trimestral',value:'quarterly'},{label:'Semestral',value:'semiannual'},{label:'Anual',value:'annual'}]},{name:'duration_months',label:'Duração em meses',type:'number',defaultValue:1,required:true}]}/></section>
+      <section><div className="section-head"><h2><Tags size={17} style={{verticalAlign:'middle',marginRight:7}}/>Categorias financeiras</h2><span>DRE e fluxo de caixa</span></div><CrudResource table="financial_categories" organizationId={profile.organization_id} searchFields={['name','type']} addLabel="Nova categoria" emptyText="Nenhuma categoria financeira." columns={[{key:'name',label:'Categoria'},{key:'type',label:'Tipo'}]} fields={[{name:'name',label:'Nome',required:true},{name:'type',label:'Tipo',type:'select',required:true,options:[{label:'Receita',value:'income'},{label:'Despesa',value:'expense'}]}]}/></section>
+    </>}
+  </div></ProtectedPage>;
+}

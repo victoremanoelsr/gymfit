@@ -1,0 +1,8 @@
+import { UsersRound } from 'lucide-react';
+import { ProtectedPage } from '@/components/ProtectedPage';
+import { PageHeader } from '@/components/PageHeader';
+import { CrudResource } from '@/components/CrudResource';
+import { requireSession } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function FuncionariosPage(){const {profile}=await requireSession();const supabase=await createClient();let bq=supabase.from('branches').select('id,name').order('name');if(profile.organization_id)bq=bq.eq('organization_id',profile.organization_id);const {data:branches}=await bq;return <ProtectedPage><div className="page"><PageHeader title="Equipe" description="Funcionários, cargos, unidades, salários, comissões e base para escalas e produtividade." actions={<span className="badge badge-blue"><UsersRound size={13}/> Permissões granulares</span>}/><CrudResource table="staff_records" organizationId={profile.organization_id} select="*,branches(name)" searchFields={['full_name','job_title','branches.name']} addLabel="Novo funcionário" emptyText="Nenhum funcionário cadastrado." columns={[{key:'full_name',label:'Funcionário'},{key:'job_title',label:'Cargo'},{key:'branches.name',label:'Unidade'},{key:'hire_date',label:'Admissão',format:'date'},{key:'salary',label:'Salário',format:'money'},{key:'active',label:'Ativo',format:'boolean'}]} fields={[{name:'full_name',label:'Nome completo',required:true},{name:'job_title',label:'Cargo',required:true},{name:'branch_id',label:'Unidade',type:'select',options:(branches||[]).map(b=>({label:b.name,value:b.id}))},{name:'hire_date',label:'Data de admissão',type:'date'},{name:'salary',label:'Salário',type:'number',step:'0.01'}]}/></div></ProtectedPage>}
